@@ -10,8 +10,8 @@ NC='\033[0m' # No Color
 TARGET_DIR="$HOME/.ssh"
 AUTH_KEYS="$TARGET_DIR/authorized_keys"
 
-# ⚠️ PASTE YOUR NEW PUBLIC KEY INSIDE THE QUOTES BELOW:
-MY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAYOUR_NEW_KEY_HERE... brdshado@gmail.com"
+# ⚠️ your brand new public key string:
+MY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINYEUvOZqwCQGamuafJs4ty2JflpdHgntnI3qOwjSSLz brdshado@gmail.com"
 
 # 🧹 Your old lost key (stored here so the script can clean it up for you)
 OLD_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOS2y3d1Ef7ow3NZNlnAbGjxvqdcoj/9JehFq3SIg1af brdshado@gmail.com"
@@ -45,8 +45,9 @@ case $choice in
         mkdir -p "$TARGET_DIR" && chmod 700 "$TARGET_DIR"
         touch "$AUTH_KEYS" && chmod 600 "$AUTH_KEYS"
         
-        # Purge the old lost key and any duplicates of the new key
+        # Purge the old lost key, any placeholder strings, and duplicates of the new key
         sed -i "\#$OLD_KEY#d" "$AUTH_KEYS"
+        sed -i '\#YOUR_NEW_KEY_HERE#d' "$AUTH_KEYS"
         sed -i "\#$MY_KEY#d" "$AUTH_KEYS"
         
         # Append the new key securely
@@ -58,6 +59,7 @@ case $choice in
         if [ -f "$AUTH_KEYS" ]; then
             # Remove both keys inline safely
             sed -i "\#$OLD_KEY#d" "$AUTH_KEYS"
+            sed -i '\#YOUR_NEW_KEY_HERE#d' "$AUTH_KEYS"
             sed -i "\#$MY_KEY#d" "$AUTH_KEYS"
             echo -e "${GREEN}🗑️ All access keys removed successfully!${NC}\n"
         else
