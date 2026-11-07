@@ -7,17 +7,24 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-MY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOS2y3d1Ef7ow3NZNlnAbGjxvqdcoj/9JehFq3SIg1af brdshado@gmail.com"
+TARGET_DIR="$HOME/.ssh"
+AUTH_KEYS="$TARGET_DIR/authorized_keys"
 
-# Check if the key is currently installed
+# ⚠️ PASTE YOUR NEW PUBLIC KEY INSIDE THE QUOTES BELOW:
+MY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAYOUR_NEW_KEY_HERE... brdshado@gmail.com"
+
+# 🧹 Your old lost key (stored here so the script can clean it up for you)
+OLD_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOS2y3d1Ef7ow3NZNlnAbGjxvqdcoj/9JehFq3SIg1af brdshado@gmail.com"
+
+# Check if the NEW key is currently installed
 STATUS="${RED}NOT INSTALLED${NC}"
-if [ -f ~/.ssh/authorized_keys ] && grep -q "$MY_KEY" ~/.ssh/authorized_keys; then
+if [ -f "$AUTH_KEYS" ] && grep -Fq "$MY_KEY" "$AUTH_KEYS"; then
     STATUS="${GREEN}INSTALLED & ACTIVE${NC}"
 fi
 
 clear
 echo -e "${CYAN}====================================================${NC}"
-echo -e "           Brdshado SSH Access Manager              "
+echo -e "             Brdshado SSH Access Manager            "
 echo -e "${CYAN}====================================================${NC}"
 echo -e "This script controls my SSH access to your server."
 echo -e "Remove access immediately after my work is complete."
@@ -29,31 +36,30 @@ echo -e "${GREEN}1${NC} | Install SSH Key (Grant Access)"
 echo -e "${RED}2${NC} | Remove SSH Key (Revoke Access)"
 echo -e "3 | Exit"
 echo ""
+
 read -p "Select an option [1-3]: " choice
 
 case $choice in
     1)
-        echo -e "\n${YELLOW}Installing key...${NC}"
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        touch ~/.ssh/authorized_keys
+        echo -e "\n${YELLOW}Installing new key and removing old one...${NC}"
+        mkdir -p "$TARGET_DIR" && chmod 700 "$TARGET_DIR"
+        touch "$AUTH_KEYS" && chmod 600 "$AUTH_KEYS"
         
-        # Remove just in case to prevent duplicate entries, then add
-        grep -v "$MY_KEY" ~/.ssh/authorized_keys > ~/.ssh/authorized_keys.tmp
-        mv ~/.ssh/authorized_keys.tmp ~/.ssh/authorized_keys
+        # Purge the old lost key and any duplicates of the new key
+        sed -i "\#$OLD_KEY#d" "$AUTH_KEYS"
+        sed -i "\#$MY_KEY#d" "$AUTH_KEYS"
         
-        echo "$MY_KEY" >> ~/.ssh/authorized_keys
-        chmod 600 ~/.ssh/authorized_keys
-        
-        echo -e "${GREEN}✅ Key installed successfully! I can now log in.${NC}\n"
+        # Append the new key securely
+        echo "$MY_KEY" >> "$AUTH_KEYS"
+        echo -e "${GREEN}✅ New key installed successfully! Old key purged.${NC}\n"
         ;;
     2)
-        echo -e "\n${YELLOW}Removing key...${NC}"
-        if [ -f ~/.ssh/authorized_keys ]; then
-            grep -v "$MY_KEY" ~/.ssh/authorized_keys > ~/.ssh/authorized_keys.tmp
-            mv ~/.ssh/authorized_keys.tmp ~/.ssh/authorized_keys
-            chmod 600 ~/.ssh/authorized_keys
-            echo -e "${GREEN}🗑️ Key removed successfully! My access is revoked.${NC}\n"
+        echo -e "\n${YELLOW}Removing keys...${NC}"
+        if [ -f "$AUTH_KEYS" ]; then
+            # Remove both keys inline safely
+            sed -i "\#$OLD_KEY#d" "$AUTH_KEYS"
+            sed -i "\#$MY_KEY#d" "$AUTH_KEYS"
+            echo -e "${GREEN}🗑️ All access keys removed successfully!${NC}\n"
         else
             echo -e "${RED}No SSH keys found on this server.${NC}\n"
         fi
